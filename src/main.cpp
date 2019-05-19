@@ -33,10 +33,23 @@ string hasData(string s) {
 const int TWIDDLE_INIT =0;
 const int TWIDDLE_RUN = 1;
 const int TWIDDLE_ERR_CNT_RUN = 2;
-const int TWIDDLE_CHECK = 3;
+const int TWIDDLE_ERR_CHECK = 3;
 const int TWIDDLE_RUN_SECOND = 4;
 const int TWIDDLE_ERR_CNT_RUN_SECOND = 5;
-const int TWIDDLE_CHECK_SECOND = 6;
+const int TWIDDLE_ERR_CHECK_SECOND = 6;
+
+
+double P[3] = {0,0,0};
+  double dp[3] = {1,1,1};
+  
+  double err = 0;
+  double best_err = 1000000;
+  int state_curr = TWIDDLE_INIT;
+  int state_next = TWIDDLE_INIT;
+  
+  int p_index = 0;
+  int count=0;
+  int twiddle_ok = 1;   // count twiddle run number 
 
 
 int main() {
@@ -46,18 +59,8 @@ int main() {
   /**
    * TODO: Initialize the pid variable.
    */
-  pid.Init(0, 0, 0);
-  double P[3] = {0,0,0};
-  double dp[3] = {1,1,1};
+  pid.Init(0.15, 0.001, 1.5);
   
-  double err = 0;
-  double best_err = 1000000;
-  int state_curr = TWIDDLE_INIT;
-  int state_next = 0；
-  
-  double p_index = 0;
-  
-  int twiddle_ok = 0;   // count twiddle run number 
 
   h.onMessage([&pid](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, 
                      uWS::OpCode opCode) {
@@ -84,9 +87,9 @@ int main() {
            * NOTE: Feel free to play around with the throttle and speed.
            *   Maybe use another PID controller to control the speed!
            */
-          if(twiddle_ok != 1)
+          if(twiddle_ok == 0)
           { 
-            switch(state_curr):
+            switch(state_curr)
             {
               case TWIDDLE_INIT:
               {
@@ -135,7 +138,7 @@ int main() {
                 {
                   dp[p_index] *= 1.1;           // indicate this direction is right 
                   best_err = err;
-                  p_index++；                    //check next hyperparameter
+                  p_index++;                    //check next hyperparameter
                   if(p_index>=3)
                   {
                     p_index = 0;
@@ -144,7 +147,7 @@ int main() {
                 } 
                 else                             // err is not smaller than best_err
                 {
-                  p[p_index] -= 2*dp[p_index];   // curr p change should change in the other direction
+                  P[p_index] -= 2*dp[p_index];   // curr p change should change in the other direction
                   pid.Pid_set(P);                //update kp ki kd
                   state_next = TWIDDLE_RUN_SECOND;  //second check err_sum
                 }
@@ -181,10 +184,10 @@ int main() {
                 }
                 else                          //both direction can't make err smaller,make the range of dp smaller 
                 {
-                  p[p_index] += dp[p_index];  
+                  P[p_index] += dp[p_index];  
                   dp[p_index] *=0.9;
                 }
-                p_index++；                    //check next hyperparameter
+                p_index++;                    //check next hyperparameter
                 if(p_index>=3)
                 {
                   p_index = 0;
@@ -194,7 +197,12 @@ int main() {
               break;
             }
           }
-        
+          else
+          {
+            
+          }
+          
+          state_curr = state_next;
             
           
           
@@ -206,7 +214,7 @@ int main() {
              steer_value = -1;
           }
           // DEBUG
-          std::cout << "CTE: " << cte << " Steering Value: " << steer_value 
+          std::cout << "--------------CTE: " << cte << " Steering Value: " << steer_value 
                     << std::endl;
 
           json msgJson;
