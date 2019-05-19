@@ -39,7 +39,7 @@ const int TWIDDLE_ERR_CNT_RUN_SECOND = 5;
 const int TWIDDLE_ERR_CHECK_SECOND = 6;
 
 
-double P[3] = {0,0,0};
+double P[3] = {0.15,0,1.5};
   double dp[3] = {1,1,1};
   
   double err = 0;
